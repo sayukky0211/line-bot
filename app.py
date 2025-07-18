@@ -2,20 +2,20 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-import openai
 import os
-import time
 
 app = Flask(__name__)
 
-# 環境変数
-LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
-LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+# 環境変数からチャネルシークレットとアクセストークンを取得
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
-openai.api_key = OPENAI_API_KEY
+
+@app.route("/")
+def home():
+    return "LINE Bot is running!"
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -31,31 +31,24 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    text = event.message.text
+    user_msg = event.message.text.strip()
 
-    # メンションされたか確認（@が含まれるなどの単純な例）
-    if '@' in text or 'bot' in text.lower():
-        reply_text = generate_chatgpt_response(text)
+    if user_msg.lower() == "/help":
+        help_text = (
+            "📌 **使えるコマンド一覧**\n\n"
+            "・/help - このヘルプを表示\n"
+            "・/ping - 応答確認\n"
+            "・/say <メッセージ> - Botが繰り返す（管理者限定）\n"
+            "・@Bot名 <メッセージ> - メンションに応答\n"
+            "・画像生成・翻訳・天気・検索なども順次追加予定！"
+        )
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text=reply_text)
+            TextSendMessage(text=help_text)
         )
-
-def generate_chatgpt_response(user_text):
-    try:
-        start = time.time()
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "あなたは明るくてかわいい女の子のようにふるまうAIです。丁寧だけどフレンドリーに答えてね！"},
-                {"role": "user", "content": user_text}
-            ]
+    else:
+        # デフォルトの反応
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=f"「{user_msg}」って言ったね！\n→ /help でコマンド確認できるよ✨")
         )
-        duration = round((time.time() - start) * 1000)
-        reply = response['choices'][0]['message']['content']
-        return f"{reply}\n（処理時間: {duration}ms）"
-    except Exception as e:
-        return f"ごめんね、ちょっとエラーが出ちゃったみたい……！\n{e}"
-
-if __name__ == "__main__":
-    app.run()
