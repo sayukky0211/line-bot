@@ -13,21 +13,22 @@ LINE_CHANNEL_SECRET = "29a15a7ad0dc5797c2c42a33778184c2"
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
-@app.route("/")
-def home():
-    return "LINE Bot is running!"
-
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
 
+    print("📩 受信したbody:", body)
+    print("📩 署名:", signature)
+
     try:
-    handler.handle(body, signature)
-except InvalidSignatureError:
-    # abort(400)
-    print("⚠️ Invalid signature!")
-    return 'Invalid signature'
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        print("⚠️ 署名エラー！")
+        return 'Invalid signature'
+
+    return 'OK'
+
 
 
 @handler.add(MessageEvent, message=TextMessage)
