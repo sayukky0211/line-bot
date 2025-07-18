@@ -23,11 +23,12 @@ def callback():
     body = request.get_data(as_text=True)
 
     try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
+    handler.handle(body, signature)
+except InvalidSignatureError:
+    # abort(400)
+    print("⚠️ Invalid signature!")
+    return 'Invalid signature'
 
-    return 'OK'
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
