@@ -45,3 +45,5 @@ def handle_message(event):
             event.reply_token,
             TextSendMessage(text=f"あなたは「{user_msg}」と言いました。")
         )
+if __name__ == "__main__":
+    app.run(port=8000)
