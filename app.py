@@ -46,4 +46,6 @@ def handle_message(event):
             TextSendMessage(text=f"あなたは「{user_msg}」と言いました。")
         )
 if __name__ == "__main__":
+    print("Starting app on port 8000")  # ← 追加してみる
     app.run(port=8000)
+
